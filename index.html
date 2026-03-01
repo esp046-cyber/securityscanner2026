@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SecScan">
+<title>Security Scanner — christechva.netlify.app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS — WCAG Verified Contrast Ratios
+   t1: 16.3:1  t2: 11.0:1  t3: 7.1:1 on cards (ALL AAA)
+   green: 8.2:1  amber: 8.9:1  blue: 7.9:1 (ALL AAA)
+   red: 5.35:1 AA — brand color, used large/bold only
+═══════════════════════════════════════════════════════════ */
+:root {
+  /* Brand red */
+  --r1:#FF453A; --r2:#E8362B; --r3:#C42B21; --r4:#9A2019; --r5:#611210;
+
+  /* Surfaces — distinct steps, no mud */
+  --bg:  #0D0D10;   /* page bg          */
+  --bg2: #151518;   /* card surface     */
+  --bg3: #1D1D22;   /* inset / nested   */
+  --bg4: #242428;   /* hover / input    */
+  --bg5: #2E2E34;   /* border / disabled*/
+
+  /* Text — ALL pass AAA on card surface */
+  --t1:  #F2F2F5;   /* 16.3:1 headings, values  */
+  --t2:  #C8C8D4;   /* 11.0:1 body, descriptions */
+  --t3:  #A0A0B8;   /*  7.1:1 labels, captions  */
+
+  /* Semantic colors — ALL pass AAA on card */
+  --green: #34C759;  /* 8.2:1 */
+  --amber: #FF9F0A;  /* 8.9:1 */
+  --blue:  #5EB0FF;  /* 7.9:1 */
+
+  /* Borders */
+  --bdr:        rgba(255,255,255,0.08);
+  --bdr-strong: rgba(255,255,255,0.14);
+  --bdr-red:    rgba(255,69,58,0.30);
+
+  /* Type scale */
+  --fs-xs:12px; --fs-sm:16px; --fs-md:20px; --fs-lg:32px;
+  --ff-sans:'IBM Plex Sans',sans-serif;
+  --ff-mono:'IBM Plex Mono',monospace;
+
+  /* Layout */
+  --nav-h:68px; --header-h:60px;
+
+  /* Apple-style layered shadows */
+  --shadow-card:0 1px 2px rgba(0,0,0,.65), 0 4px 14px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.04) inset;
+  --shadow-glow:0 0 0 1px rgba(255,69,58,.25), 0 4px 24px rgba(255,69,58,.15);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--ff-sans);font-size:var(--fs-sm);
+  background:var(--bg);color:var(--t1);
+  display:flex;flex-direction:column;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+::-webkit-scrollbar{width:3px;background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px}
+:focus-visible{outline:2px solid var(--r1);outline-offset:2px;border-radius:4px}
+
+/* ── CHANGE ALERT ── */
+#change-alert{
+  display:none;position:fixed;
+  top:calc(var(--header-h) + 10px);left:12px;right:12px;
+  background:#1D1A10;border:1px solid rgba(255,159,10,.35);
+  border-radius:12px;padding:14px 16px;z-index:300;
+  box-shadow:0 4px 24px rgba(0,0,0,.55),0 0 0 1px rgba(255,159,10,.18);
+  animation:slide-down .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slide-down{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+#change-alert.show{display:flex;align-items:flex-start;gap:10px}
+.alert-icon{font-size:18px;flex-shrink:0;line-height:1.4}
+.alert-body{flex:1}
+.alert-title{font-size:var(--fs-xs);font-weight:700;color:var(--amber);margin-bottom:4px;letter-spacing:.02em}
+.alert-items{font-family:var(--ff-mono);font-size:11px;color:var(--t2);line-height:1.8}
+.alert-dismiss{background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;line-height:1;padding:2px;flex-shrink:0;min-height:24px;border-radius:4px}
+.alert-dismiss:hover{color:var(--t1);background:var(--bg4)}
+
+/* ── HEADER ── */
+.hdr{
+  height:var(--header-h);
+  background:rgba(13,13,16,.97);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;flex-shrink:0;z-index:100;position:relative;
+  box-shadow:0 1px 0 rgba(255,255,255,.04);
+}
+.hdr-left{display:flex;flex-direction:column;gap:2px}
+.hdr-caption{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.12em;text-transform:uppercase}
+.hdr-domain{font-family:var(--ff-mono);font-size:13px;color:var(--r1);font-weight:600;letter-spacing:.01em}
+
+/* ── STATUS PILL ── */
+.status-pill{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+}
+.status-pill.loading{background:rgba(160,160,184,.08);border:1px solid rgba(160,160,184,.18);color:var(--t3)}
+.status-pill.secure{background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.28);color:var(--green);box-shadow:0 0 16px rgba(52,199,89,.12)}
+.status-pill.warning{background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.28);color:var(--amber);box-shadow:0 0 16px rgba(255,159,10,.12)}
+.status-pill.danger{background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.28);color:var(--r1);box-shadow:0 0 16px rgba(255,69,58,.15)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse-d 2s ease-in-out infinite}
+@keyframes pulse-d{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.7)}}
+
+/* ── SCAN BUTTON ── */
+.scan-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:9px;border:none;cursor:pointer;
+  background:var(--r2);color:#fff;
+  font-family:var(--ff-sans);font-size:var(--fs-xs);font-weight:600;
+  min-height:34px;letter-spacing:.01em;transition:all .18s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,.4),0 2px 10px rgba(232,54,43,.25);
+}
+.scan-btn:hover:not(:disabled){background:var(--r1);transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.4),0 4px 20px rgba(255,69,58,.35)}
+.scan-btn:active:not(:disabled){transform:translateY(0)}
+.scan-btn:disabled{opacity:.5;cursor:not-allowed}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MAIN / PAGES ── */
+.main{flex:1;overflow:hidden;position:relative}
+.page{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  padding:14px 12px calc(var(--nav-h) + 14px);
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  transition:opacity .22s ease,transform .22s ease;
+}
+.page.active{opacity:1;pointer-events:auto;transform:none}
+
+/* ── BOTTOM NAV ── */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);
+  background:rgba(13,13,16,.98);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-top:1px solid var(--bdr);
+  display:flex;align-items:center;
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:200;box-shadow:0 -1px 0 rgba(255,255,255,.04);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;min-height:44px;cursor:pointer;background:none;border:none;
+  color:var(--t3);font-family:var(--ff-sans);font-size:10px;font-weight:500;
+  letter-spacing:.03em;position:relative;transition:color .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-item::before{
+  content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%) scaleX(0);
+  width:30px;height:2px;background:var(--r1);border-radius:0 0 3px 3px;
+  box-shadow:0 0 10px rgba(255,69,58,.6);transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.nav-item.active::before{transform:translateX(-50%) scaleX(1)}
+.nav-item.active{color:var(--r1)}
+.nav-icon-wrap{width:32px;height:27px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:background .18s}
+.nav-item.active .nav-icon-wrap{background:rgba(255,69,58,.14)}
+.nav-icon{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── CARD ── */
+.card{
+  background:var(--bg2);border:1px solid var(--bdr);border-radius:14px;
+  box-shadow:var(--shadow-card);margin-bottom:8px;overflow:hidden;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.04) 0px,transparent 1px);
+}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 11px;border-bottom:1px solid var(--bdr);
+}
+.card-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em}
+.card-body{padding:14px 16px}
+
+/* ── SKELETON ── */
+.skel{
+  background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);
+  background-size:200% 100%;animation:skel 1.6s ease-in-out infinite;border-radius:6px;
+}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── BADGES — 22% opacity bg, text at ~8:1 ── */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:12px;
+  font-size:11px;font-weight:600;letter-spacing:.02em;line-height:1.4;
+}
+.badge-ok    {background:rgba(52,199,89,.18); color:#3FD868;border:1px solid rgba(52,199,89,.3)}
+.badge-warn  {background:rgba(255,159,10,.18);color:#FFB340;border:1px solid rgba(255,159,10,.3)}
+.badge-danger{background:rgba(255,69,58,.18); color:#FF6961;border:1px solid rgba(255,69,58,.3)}
+.badge-info  {background:rgba(94,176,255,.15);color:#82C8FF;border:1px solid rgba(94,176,255,.25)}
+.badge-gray  {background:rgba(160,160,184,.12);color:var(--t2);border:1px solid var(--bdr-strong)}
+.bdot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── GRADE CIRCLE ── */
+.grade-circle{
+  width:60px;height:60px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2.5px solid;font-family:var(--ff-mono);font-weight:700;
+}
+.grade-circle .grade-val{font-size:22px;line-height:1}
+.grade-circle .grade-sub{font-size:9px;font-weight:500;margin-top:1px;opacity:.75}
+.grade-A-plus{border-color:var(--green);color:var(--green);box-shadow:0 0 20px rgba(52,199,89,.18)}
+.grade-A    {border-color:var(--green);color:var(--green)}
+.grade-A-minus{border-color:#86D44D;color:#86D44D}
+.grade-B    {border-color:var(--amber);color:var(--amber)}
+.grade-C    {border-color:#FF8240;color:#FF8240}
+.grade-D,.grade-F{border-color:#FF6961;color:#FF6961}
+.grade-UNKNOWN{border-color:var(--t3);color:var(--t3)}
+
+/* ── PROGRESS ── */
+.prog{height:4px;background:var(--bg5);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .9s cubic-bezier(.4,0,.2,1)}
+
+/* ── HEADER ROW (raw headers) ── */
+.hrow{display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:12px}
+.hrow:last-child{border-bottom:none}
+.hrow-name{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t2)}
+.hrow-val{font-family:var(--ff-mono);font-size:11px;color:var(--t3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+
+/* ── DNS ROW ── */
+.dns-row{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);align-items:start}
+.dns-row:last-child{border-bottom:none}
+.dns-type{font-family:var(--ff-mono);font-size:10px;font-weight:700;color:var(--blue);background:rgba(94,176,255,.12);border:1px solid rgba(94,176,255,.2);border-radius:5px;padding:3px 5px;text-align:center;letter-spacing:.04em}
+.dns-val{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t2);word-break:break-all;line-height:1.5}
+.dns-ttl{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ── METRIC GRID ── */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.metric-card{
+  background:var(--bg2);border:1px solid var(--bdr);border-radius:14px;
+  padding:16px 14px 14px;box-shadow:var(--shadow-card);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.04) 0px,transparent 1px);
+}
+.metric-val{font-family:var(--ff-mono);font-size:28px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.metric-label{font-size:var(--fs-xs);color:var(--t3);margin-top:6px;font-weight:500;letter-spacing:.01em}
+
+/* ── CERT / INFO ROW ── */
+.cert-row{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.cert-row:last-child{border-bottom:none}
+.cert-key{font-size:var(--fs-xs);color:var(--t3);font-weight:500;padding-top:1px}
+.cert-val{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t2);word-break:break-all;line-height:1.5}
+
+/* ── SCORE HEADER GRID ── */
+.score-header-grid{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.score-header-grid:last-child{border-bottom:none}
+.score-h-name{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t2)}
+
+/* ── INFO ROW ── */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:10px}
+.info-row:last-child{border-bottom:none}
+.info-key{font-size:var(--fs-xs);color:var(--t3);font-weight:500;white-space:nowrap}
+.info-val{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t2);text-align:right;word-break:break-all;max-width:58%}
+
+/* ── EMAIL ROW ── */
+.email-row{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.email-row:last-child{border-bottom:none}
+.email-proto{font-family:var(--ff-mono);font-size:10px;font-weight:700;color:#BF8FFF;background:rgba(191,143,255,.12);border:1px solid rgba(191,143,255,.2);border-radius:5px;padding:3px 4px;text-align:center;letter-spacing:.04em;margin-top:2px}
+.email-detail{font-family:var(--ff-mono);font-size:10px;color:var(--t2);word-break:break-all;margin-bottom:3px;line-height:1.5}
+.email-tip{font-size:11px;color:var(--t3);line-height:1.5}
+
+/* ── LIVE BADGE ── */
+.live-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--ff-mono);font-size:10px;font-weight:700;color:var(--r1);text-transform:uppercase;letter-spacing:.08em}
+.live-pulse{width:6px;height:6px;border-radius:50%;background:var(--r1);box-shadow:0 0 0 0 rgba(255,69,58,.5);animation:live 1.6s ease-in-out infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 rgba(255,69,58,.5)}70%{box-shadow:0 0 0 6px rgba(255,69,58,0)}100%{box-shadow:0 0 0 0 rgba(255,69,58,0)}}
+
+/* ── SECTION TITLE ── */
+.sec-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin:18px 0 7px 2px}
+
+/* ── TOGGLE ── */
+.toggle{position:relative;width:46px;height:28px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;border-radius:14px;background:var(--bg5);border:1px solid var(--bdr-strong);transition:all .25s;cursor:pointer}
+.toggle input:checked + .tog-track{background:var(--r2);border-color:var(--r2);box-shadow:0 0 12px rgba(232,54,43,.3)}
+.tog-thumb{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transition:transform .25s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.toggle input:checked ~ .tog-thumb{transform:translateX(18px)}
+
+/* ── SETTINGS ROWS ── */
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;background:var(--bg2);border:1px solid var(--bdr);
+  border-radius:12px;min-height:52px;margin-bottom:8px;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.04) 0px,transparent 1px);
+}
+.setting-label{font-size:var(--fs-sm);font-weight:500;color:var(--t1)}
+.rescan-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;background:var(--bg2);border:1px solid var(--bdr);
+  border-radius:12px;min-height:56px;margin-bottom:8px;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.04) 0px,transparent 1px);
+}
+.rescan-label{display:flex;flex-direction:column;gap:4px}
+.rescan-title{font-size:var(--fs-sm);font-weight:500;color:var(--t1)}
+.rescan-countdown{font-family:var(--ff-mono);font-size:11px;color:var(--t3)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 16px;min-height:46px;border-radius:11px;
+  font-family:var(--ff-sans);font-size:var(--fs-sm);font-weight:600;
+  cursor:pointer;border:none;transition:all .18s;width:100%;
+  justify-content:flex-start;margin-bottom:8px;letter-spacing:.01em;
+}
+.btn-ghost{background:var(--bg2);color:var(--t2);border:1px solid var(--bdr);background-image:linear-gradient(180deg,rgba(255,255,255,.04) 0px,transparent 1px)}
+.btn-ghost:hover{background:var(--bg3);color:var(--t1);border-color:var(--bdr-strong)}
+.btn-danger{background:rgba(255,69,58,.1);color:#FF6961;border:1px solid rgba(255,69,58,.25)}
+.btn-danger:hover{background:rgba(255,69,58,.18);border-color:rgba(255,69,58,.35)}
+
+/* ── URLSCAN RESULT ── */
+.scan-result{
+  padding:12px 14px;background:var(--bg3);border:1px solid var(--bdr);
+  border-radius:10px;margin-bottom:6px;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.03) 0px,transparent 1px);
+}
+.scan-url{font-family:var(--ff-mono);font-size:11px;color:var(--t2);margin-bottom:6px;word-break:break-all;line-height:1.4}
+.scan-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ── ERROR BOX ── */
+.error-box{
+  padding:12px 14px;background:#1A1012;
+  border:1px solid rgba(255,69,58,.22);border-radius:10px;
+  font-size:var(--fs-xs);color:#FF6961;font-family:var(--ff-mono);line-height:1.5;
+}
+
+/* ── PAGE HEADING ── */
+.page-h{font-size:var(--fs-md);font-weight:700;color:var(--t1);margin-bottom:14px;letter-spacing:-.01em}
+
+/* ── SECURITY HEADER DETAIL ROW ── */
+.hdr-detail-row{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.hdr-detail-row:last-child{border-bottom:none}
+.hdr-detail-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:10px}
+.hdr-detail-name{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t1);font-weight:600}
+.hdr-detail-val{font-family:var(--ff-mono);font-size:11px;margin-bottom:4px;line-height:1.4}
+.hdr-detail-tip{font-size:11px;color:var(--t3);line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- CHANGE ALERT BANNER -->
+<div id="change-alert" role="alert">
+  <div class="alert-icon">⚠️</div>
+  <div class="alert-body">
+    <div class="alert-title">Changes Detected Since Last Scan</div>
+    <div class="alert-items" id="alert-items"></div>
+  </div>
+  <button class="alert-dismiss" onclick="document.getElementById('change-alert').classList.remove('show')" aria-label="Dismiss">×</button>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-left">
+    <span class="hdr-caption">Security Scanner · 2026</span>
+    <span class="hdr-domain">christechva.netlify.app</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <div class="status-pill loading" id="global-status">
+      <div class="status-dot"></div>
+      <span id="status-text">Loading…</span>
+    </div>
+    <button class="scan-btn" id="scan-btn" onclick="startScan()">
+      <svg id="scan-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.62"/></svg>
+      Scan
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ── OVERVIEW ── -->
+  <section class="page active" id="page-overview">
+
+    <!-- Site Status -->
+    <div class="metric-grid">
+      <div class="metric-card" id="mc-status">
+        <div class="metric-val" id="mv-status" style="font-size:20px;">—</div>
+        <div class="metric-label">Site Status</div>
+      </div>
+      <div class="metric-card" id="mc-rt">
+        <div class="metric-val" id="mv-rt">—</div>
+        <div class="metric-label">Response (ms)</div>
+      </div>
+      <div class="metric-card" id="mc-ssl">
+        <div class="metric-val" id="mv-ssl" style="font-size:20px;">—</div>
+        <div class="metric-label">SSL Grade</div>
+      </div>
+      <div class="metric-card" id="mc-score">
+        <div class="metric-val" id="mv-score">—</div>
+        <div class="metric-label">Header Score</div>
+      </div>
+    </div>
+
+    <!-- Server Info -->
+    <div class="sec-title">Server Details</div>
+    <div class="card">
+      <div class="card-body" id="server-info">
+        <div class="skel" style="height:14px;width:70%;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:50%;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:60%;"></div>
+      </div>
+    </div>
+
+    <!-- Security Headers Summary -->
+    <div class="sec-title">Security Headers</div>
+    <div class="card">
+      <div class="card-body" id="headers-summary">
+        <div class="skel" style="height:14px;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:80%;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:60%;"></div>
+      </div>
+    </div>
+
+    <!-- URLscan.io -->
+    <div class="sec-title">Threat Intelligence (URLscan.io)</div>
+    <div id="urlscan-results">
+      <div class="skel" style="height:60px;border-radius:10px;margin-bottom:6px;"></div>
+      <div class="skel" style="height:60px;border-radius:10px;"></div>
+    </div>
+
+    <!-- Email Security -->
+    <div class="sec-title">Email Security (SPF · DMARC · DKIM)</div>
+    <div class="card" id="email-sec-card">
+      <div class="card-body">
+        <div class="skel" style="height:14px;margin-bottom:10px;"></div>
+        <div class="skel" style="height:14px;width:80%;"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── HEADERS ── -->
+  <section class="page" id="page-headers">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:var(--fs-md);font-weight:700;">HTTP Headers</span>
+      <div class="live-badge" id="headers-live" style="display:none;"><div class="live-pulse"></div>LIVE</div>
+    </div>
+
+    <!-- Score breakdown -->
+    <div class="sec-title">Security Score</div>
+    <div class="card" id="header-scores-card">
+      <div class="card-body">
+        <div class="skel" style="height:14px;margin-bottom:10px;"></div>
+        <div class="skel" style="height:14px;width:80%;margin-bottom:10px;"></div>
+        <div class="skel" style="height:14px;width:60%;"></div>
+      </div>
+    </div>
+
+    <!-- Raw headers -->
+    <div class="sec-title">All Response Headers</div>
+    <div class="card" id="raw-headers-card">
+      <div class="card-body">
+        <div class="skel" style="height:14px;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:70%;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SSL ── -->
+  <section class="page" id="page-ssl">
+    <div class="page-h">SSL / TLS Analysis</div>
+
+    <div id="ssl-content">
+      <div class="skel" style="height:100px;border-radius:14px;margin-bottom:8px;"></div>
+      <div class="skel" style="height:180px;border-radius:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ── DNS ── -->
+  <section class="page" id="page-dns">
+    <div class="page-h">DNS Records</div>
+    <div id="dns-content">
+      <div class="skel" style="height:80px;border-radius:14px;margin-bottom:8px;"></div>
+      <div class="skel" style="height:120px;border-radius:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ── SETTINGS ── -->
+  <section class="page" id="page-settings">
+    <div class="page-h">Settings</div>
+
+    <div class="setting-row">
+      <span class="setting-label">Dark Mode</span>
+      <label class="toggle">
+        <input type="checkbox" checked id="dark-toggle">
+        <div class="tog-track"></div><div class="tog-thumb"></div>
+      </label>
+    </div>
+
+    <!-- Auto-rescan toggle -->
+    <div class="rescan-row">
+      <div class="rescan-label">
+        <span class="rescan-title">Auto-Rescan</span>
+        <span class="rescan-countdown" id="rescan-countdown">Every 30 minutes — disabled</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="autorescan-toggle">
+        <div class="tog-track"></div><div class="tog-thumb"></div>
+      </label>
+    </div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <span class="setting-label">Last Scan</span>
+      <span id="last-scan-time" style="font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t3);">Never</span>
+    </div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <span class="setting-label">Target Domain</span>
+      <span style="font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--r1);">christechva.netlify.app</span>
+    </div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <span class="setting-label">Data Sources</span>
+      <div style="font-family:var(--ff-mono);font-size:10px;color:var(--t3);line-height:1.7;">
+        HackerTarget API · Google DNS API<br>
+        SSL Labs API · URLscan.io API<br>
+        ipapi.co Geolocation
+      </div>
+    </div>
+
+    <div style="margin-top:8px;">
+      <button class="btn btn-ghost" onclick="startScan()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.62"/></svg>
+        Re-run Full Scan
+      </button>
+      <button class="btn btn-ghost" onclick="exportReport()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Report (JSON)
+      </button>
+    </div>
+
+    <div style="padding:12px;background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;font-family:var(--ff-mono);font-size:10px;color:var(--t3);line-height:1.7;text-align:center;margin-top:8px;">
+      All data fetched live from public APIs<br>
+      <span style="color:var(--r1);">No login required · No data stored</span>
+    </div>
+  </section>
+
+</main>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-item active" data-page="overview">
+    <div class="nav-icon-wrap">
+      <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </div>
+    Overview
+  </button>
+  <button class="nav-item" data-page="headers">
+    <div class="nav-icon-wrap">
+      <svg class="nav-icon" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="12" y2="18"/></svg>
+    </div>
+    Headers
+  </button>
+  <button class="nav-item" data-page="ssl">
+    <div class="nav-icon-wrap">
+      <svg class="nav-icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+    </div>
+    SSL/TLS
+  </button>
+  <button class="nav-item" data-page="dns">
+    <div class="nav-icon-wrap">
+      <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    </div>
+    DNS
+  </button>
+  <button class="nav-item" data-page="settings">
+    <div class="nav-icon-wrap">
+      <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </div>
+    Settings
+  </button>
+</nav>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIGURATION
+═══════════════════════════════════════════════════════════ */
+const DOMAIN = 'christechva.netlify.app';
+const TARGET = `https://${DOMAIN}`;
+
+/* In-memory report store */
+let report = {
+  scannedAt: null, siteStatus: null, responseTime: null,
+  headers: null, headerScore: null, ssl: null,
+  dns: {}, serverIP: null, ipGeo: null, urlscans: null,
+  httpRedirect: null,   // NEW: HTTP→HTTPS redirect result
+  emailSecurity: null,  // NEW: SPF/DMARC/DKIM analysis
+};
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => {
+      n.classList.toggle('active', n.dataset.page === btn.dataset.page);
+      n.setAttribute('aria-selected', n.dataset.page === btn.dataset.page);
+    });
+    document.getElementById('page-' + btn.dataset.page)?.classList.add('active');
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════ */
+function fetchTimeout(url, opts = {}, ms = 12000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctrl.signal })
+    .finally(() => clearTimeout(id));
+}
+
+function badge(cls, text) {
+  return `<span class="badge badge-${cls}"><span class="bdot"></span>${text}</span>`;
+}
+
+function mono(text, color = 'var(--t2)') {
+  return `<span style="font-family:var(--ff-mono);font-size:12px;color:${color};">${escHtml(text)}</span>`;
+}
+
+function escHtml(s = '') {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function gradeColor(g = '') {
+  if (g.startsWith('A')) return 'var(--green)';
+  if (g.startsWith('B')) return 'var(--amber)';
+  if (g.startsWith('C')) return '#FF6B35';
+  return 'var(--r1)';
+}
+
+function gradeClass(g = '') {
+  if (!g) return 'grade-UNKNOWN';
+  return 'grade-' + g.replace('+','A-plus').replace('-','A-minus');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECURITY HEADER ANALYSIS
+═══════════════════════════════════════════════════════════ */
+const SECURITY_HEADERS = [
+  {
+    key: 'content-security-policy',
+    label: 'Content-Security-Policy',
+    weight: 25,
+    grade: (v) => v ? (v.includes('default-src') ? 'A' : 'B') : 'F',
+    tip: 'Controls allowed content sources. Missing = high XSS risk.',
+  },
+  {
+    key: 'strict-transport-security',
+    label: 'Strict-Transport-Security',
+    weight: 20,
+    grade: (v) => {
+      if (!v) return 'F';
+      const age = parseInt((v.match(/max-age=(\d+)/) || [,0])[1]);
+      if (age >= 31536000 && v.includes('includeSubDomains')) return 'A+';
+      if (age >= 31536000) return 'A';
+      if (age >= 86400) return 'B';
+      return 'C';
+    },
+    tip: 'Forces HTTPS. Should have max-age ≥ 1 year + includeSubDomains.',
+  },
+  {
+    key: 'x-frame-options',
+    label: 'X-Frame-Options',
+    weight: 15,
+    grade: (v) => {
+      if (!v) return 'F';
+      if (v.toUpperCase() === 'DENY') return 'A';
+      if (v.toUpperCase().includes('SAMEORIGIN')) return 'B';
+      return 'C';
+    },
+    tip: 'Prevents clickjacking. DENY is optimal.',
+  },
+  {
+    key: 'x-content-type-options',
+    label: 'X-Content-Type-Options',
+    weight: 10,
+    grade: (v) => v?.toLowerCase().includes('nosniff') ? 'A' : 'F',
+    tip: 'Prevents MIME sniffing attacks.',
+  },
+  {
+    key: 'referrer-policy',
+    label: 'Referrer-Policy',
+    weight: 10,
+    grade: (v) => {
+      if (!v) return 'F';
+      const strict = ['no-referrer','strict-origin','strict-origin-when-cross-origin'];
+      return strict.some(p => v.toLowerCase().includes(p)) ? 'A' : 'B';
+    },
+    tip: 'Controls referrer info sent with requests.',
+  },
+  {
+    key: 'permissions-policy',
+    label: 'Permissions-Policy',
+    weight: 10,
+    grade: (v) => v ? 'A' : 'F',
+    tip: 'Controls browser feature access (camera, mic, GPS…).',
+  },
+  {
+    key: 'x-xss-protection',
+    label: 'X-XSS-Protection',
+    weight: 5,
+    grade: (v) => {
+      if (!v || v === '0') return 'C'; // 0 is actually fine for modern browsers
+      return v.includes('mode=block') ? 'A' : 'B';
+    },
+    tip: 'Legacy XSS filter (deprecated in modern browsers).',
+  },
+  {
+    key: 'server',
+    label: 'Server Header',
+    weight: 5,
+    // Lower is better — revealing server is bad
+    grade: (v) => {
+      if (!v) return 'A'; // Not revealing = good
+      if (v.toLowerCase().includes('netlify')) return 'B';
+      return 'C';
+    },
+    tip: 'Revealing server details aids fingerprinting. Should be generic or absent.',
+    invert: true, // Absent = good
+  },
+];
+
+function calcHeaderScore(headers) {
+  if (!headers) return 0;
+  let total = 0, earned = 0;
+  SECURITY_HEADERS.forEach(h => {
+    total += h.weight;
+    const val = headers[h.key];
+    const g = h.grade(val);
+    if (g === 'A+' || g === 'A') earned += h.weight;
+    else if (g === 'B') earned += h.weight * 0.7;
+    else if (g === 'C') earned += h.weight * 0.4;
+    // F = 0
+  });
+  return Math.round((earned / total) * 100);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   API FETCHERS
+═══════════════════════════════════════════════════════════ */
+
+/* 1. Site ping */
+async function checkSiteStatus() {
+  const t0 = performance.now();
+  try {
+    await fetchTimeout(TARGET, { mode: 'no-cors', cache: 'no-store' }, 8000);
+    const ms = Math.round(performance.now() - t0);
+    return { online: true, ms };
+  } catch(e) {
+    return { online: false, ms: null };
+  }
+}
+
+/* 2. HTTP Headers via HackerTarget */
+async function fetchHeaders() {
+  try {
+    const res = await fetchTimeout(
+      `https://api.hackertarget.com/httpheaders/?q=${TARGET}`, {}, 15000
+    );
+    const text = await res.text();
+    if (text.toLowerCase().includes('error') && text.length < 100) throw new Error(text);
+    return parseHeaderText(text);
+  } catch(e) {
+    console.warn('Headers API:', e.message);
+    return null;
+  }
+}
+
+function parseHeaderText(raw) {
+  const headers = {};
+  const lines = raw.split('\n');
+  lines.forEach((line, i) => {
+    if (i === 0) { headers['_status'] = line.trim(); return; }
+    const idx = line.indexOf(':');
+    if (idx > 0) {
+      const k = line.slice(0, idx).trim().toLowerCase();
+      const v = line.slice(idx + 1).trim();
+      headers[k] = v;
+    }
+  });
+  return headers;
+}
+
+/* 3. DNS via Google DNS-over-HTTPS */
+async function fetchDNS(type) {
+  try {
+    const res = await fetchTimeout(
+      `https://dns.google/resolve?name=${DOMAIN}&type=${type}`, {}, 8000
+    );
+    return await res.json();
+  } catch(e) {
+    console.warn('DNS lookup', type, e.message);
+    return null;
+  }
+}
+
+/* 4. SSL Labs */
+async function fetchSSL() {
+  try {
+    // Try cached first
+    const res = await fetchTimeout(
+      `https://api.ssllabs.com/api/v3/analyze?host=${DOMAIN}&fromCache=on&maxAge=24`, {}, 15000
+    );
+    const data = await res.json();
+    return data;
+  } catch(e) {
+    console.warn('SSL Labs:', e.message);
+    return null;
+  }
+}
+
+async function pollSSL(attempts = 0) {
+  if (attempts > 12) return null; // max ~2 min
+  const data = await fetchSSL();
+  if (!data) return null;
+  if (data.status === 'READY') return data;
+  if (data.status === 'ERROR') return data;
+  // IN_PROGRESS or DNS — wait 10s and retry
+  await new Promise(r => setTimeout(r, 10000));
+  return pollSSL(attempts + 1);
+}
+
+/* 5. URLscan.io */
+async function fetchURLScan() {
+  try {
+    const res = await fetchTimeout(
+      `https://urlscan.io/api/v1/search/?q=domain:${DOMAIN}&size=5`, {}, 12000
+    );
+    const data = await res.json();
+    return data.results || [];
+  } catch(e) {
+    console.warn('URLscan:', e.message);
+    return null;
+  }
+}
+
+/* 6. IP Geolocation */
+async function fetchIPGeo(ip) {
+  if (!ip) return null;
+  try {
+    const res = await fetchTimeout(`https://ipapi.co/${ip}/json/`, {}, 8000);
+    return await res.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FEATURE 1 — HTTP → HTTPS REDIRECT CHECK
+   Fetches http:// headers via HackerTarget and checks if
+   the server returns a 301/302 pointing to https://
+═══════════════════════════════════════════════════════════ */
+async function checkHttpRedirect() {
+  try {
+    const res = await fetchTimeout(
+      `https://api.hackertarget.com/httpheaders/?q=http://${DOMAIN}`, {}, 12000
+    );
+    const text = await res.text();
+    if (!text || text.toLowerCase().startsWith('error')) return { checked: false, reason: text };
+
+    const firstLine = text.split('\n')[0] || '';
+    const statusCode = parseInt((firstLine.match(/\s(\d{3})(?:\s|$)/) || [])[1] || '0');
+    const locationLine = text.split('\n').find(l => l.toLowerCase().startsWith('location:')) || '';
+    const location = locationLine.replace(/^location:\s*/i, '').trim();
+    const redirectsToHttps = location.toLowerCase().startsWith('https://');
+    const isRedirect = statusCode === 301 || statusCode === 302 || statusCode === 307 || statusCode === 308;
+
+    return {
+      checked: true,
+      statusCode,
+      isRedirect,
+      location,
+      redirectsToHttps,
+      permanent: statusCode === 301 || statusCode === 308,
+    };
+  } catch(e) {
+    return { checked: false, reason: e.message };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FEATURE 2 — EMAIL SECURITY ANALYSIS (SPF · DMARC · DKIM)
+   Grades real DNS TXT records for email spoofing protection
+═══════════════════════════════════════════════════════════ */
+async function analyzeEmailSecurity() {
+  // Fetch DMARC record (_dmarc subdomain) separately
+  let dmarcRaw = null;
+  try {
+    const dmarcRes = await fetchTimeout(
+      `https://dns.google/resolve?name=_dmarc.${DOMAIN}&type=TXT`, {}, 8000
+    );
+    const dmarcData = await dmarcRes.json();
+    const dmarcAns = dmarcData.Answer?.find(r => r.type === 16);
+    if (dmarcAns) dmarcRaw = dmarcAns.data.replace(/^"|"$/g, '');
+  } catch(e) {}
+
+  // Get SPF + DKIM from main TXT records (already fetched in report.dns.TXT)
+  const txtAnswers = report.dns.TXT?.Answer?.filter(r => r.type === 16) || [];
+  const spfRaw  = txtAnswers.map(r => r.data.replace(/^"|"$/g,'')).find(v => v.startsWith('v=spf1'));
+  const dkimRaw = txtAnswers.map(r => r.data.replace(/^"|"$/g,'')).find(v => v.startsWith('v=DKIM1'));
+
+  // Grade SPF
+  let spfGrade = 'F', spfNote = 'Missing — anyone can spoof email from your domain.';
+  if (spfRaw) {
+    if (spfRaw.includes('-all'))      { spfGrade = 'A'; spfNote = 'Strict (-all) — unauthorized senders are rejected.'; }
+    else if (spfRaw.includes('~all')) { spfGrade = 'B'; spfNote = 'Soft fail (~all) — suspicious mail marked, not blocked.'; }
+    else if (spfRaw.includes('?all')) { spfGrade = 'C'; spfNote = 'Neutral (?all) — no enforcement. Upgrade to -all.'; }
+    else if (spfRaw.includes('+all')) { spfGrade = 'F'; spfNote = 'Dangerous (+all) — allows anyone to send as your domain!'; }
+    else                              { spfGrade = 'C'; spfNote = 'Present but missing ~all or -all enforcement.'; }
+  }
+
+  // Grade DMARC
+  let dmarcGrade = 'F', dmarcNote = 'Missing — email spoofing not blocked even if SPF fails.';
+  if (dmarcRaw) {
+    const pMatch = dmarcRaw.match(/p=(\w+)/i);
+    const pctMatch = dmarcRaw.match(/pct=(\d+)/i);
+    const policy = pMatch?.[1]?.toLowerCase() || 'none';
+    const pct    = pctMatch ? parseInt(pctMatch[1]) : 100;
+    if (policy === 'reject')     { dmarcGrade = pct === 100 ? 'A' : 'B'; dmarcNote = `Reject policy${pct < 100 ? ` (${pct}% enforcement)` : ''} — spoofed mail rejected.`; }
+    else if (policy === 'quarantine') { dmarcGrade = 'B'; dmarcNote = 'Quarantine — spoofed mail goes to spam.'; }
+    else                         { dmarcGrade = 'C'; dmarcNote = 'Policy=none — monitoring only, no blocking. Upgrade to quarantine or reject.'; }
+  }
+
+  // DKIM — hard to auto-verify without selector, note if found
+  let dkimGrade = '?', dkimNote = 'Cannot auto-detect DKIM selector from DNS root. Check with your email provider.';
+  if (dkimRaw) { dkimGrade = 'A'; dkimNote = 'DKIM key found in TXT records.'; }
+
+  return {
+    spf:   { raw: spfRaw   || null, grade: spfGrade,   note: spfNote   },
+    dmarc: { raw: dmarcRaw || null, grade: dmarcGrade, note: dmarcNote },
+    dkim:  { raw: dkimRaw  || null, grade: dkimGrade,  note: dkimNote  },
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FEATURE 3 — AUTO-RESCAN + CHANGE DETECTION
+═══════════════════════════════════════════════════════════ */
+let autoRescanTimer   = null;
+let autoRescanSeconds = 0;
+let prevSnapshot      = null;  // snapshot of last scan for comparison
+
+const RESCAN_INTERVAL = 30 * 60; // 30 minutes in seconds
+
+function snapshotReport() {
+  return {
+    siteStatus:   report.siteStatus,
+    responseTime: report.responseTime,
+    headerScore:  report.headerScore,
+    sslGrade:     report.ssl?.endpoints?.[0]?.grade || null,
+    httpRedirect: report.httpRedirect?.redirectsToHttps,
+    spfGrade:     report.emailSecurity?.spf?.grade,
+    dmarcGrade:   report.emailSecurity?.dmarc?.grade,
+  };
+}
+
+function detectChanges(prev, curr) {
+  if (!prev || !curr) return [];
+  const changes = [];
+  if (prev.siteStatus !== curr.siteStatus)
+    changes.push(curr.siteStatus ? '✅ Site came back ONLINE' : '🔴 Site went OFFLINE');
+  if (prev.headerScore !== null && curr.headerScore !== null && prev.headerScore !== curr.headerScore) {
+    const diff = curr.headerScore - prev.headerScore;
+    changes.push(`${diff > 0 ? '📈' : '📉'} Header score changed: ${prev.headerScore}% → ${curr.headerScore}%`);
+  }
+  if (prev.sslGrade && curr.sslGrade && prev.sslGrade !== curr.sslGrade)
+    changes.push(`🔒 SSL grade changed: ${prev.sslGrade} → ${curr.sslGrade}`);
+  if (prev.httpRedirect !== curr.httpRedirect)
+    changes.push(curr.httpRedirect ? '✅ HTTP→HTTPS redirect now active' : '⚠️ HTTP→HTTPS redirect disappeared');
+  if (prev.responseTime && curr.responseTime) {
+    const delta = curr.responseTime - prev.responseTime;
+    if (Math.abs(delta) > 300)
+      changes.push(`⏱ Response time changed: ${prev.responseTime}ms → ${curr.responseTime}ms`);
+  }
+  if (prev.spfGrade !== curr.spfGrade)
+    changes.push(`📧 SPF grade changed: ${prev.spfGrade} → ${curr.spfGrade}`);
+  if (prev.dmarcGrade !== curr.dmarcGrade)
+    changes.push(`📧 DMARC grade changed: ${prev.dmarcGrade} → ${curr.dmarcGrade}`);
+  return changes;
+}
+
+function showChangeAlert(changes) {
+  if (!changes.length) return;
+  document.getElementById('alert-items').innerHTML = changes.map(c => `${escHtml(c)}`).join('<br>');
+  document.getElementById('change-alert').classList.add('show');
+}
+
+function updateCountdown() {
+  const el = document.getElementById('rescan-countdown');
+  if (!autoRescanTimer) { el.textContent = 'Every 30 minutes — disabled'; return; }
+  const m = Math.floor(autoRescanSeconds / 60);
+  const s = autoRescanSeconds % 60;
+  el.textContent = `Next scan in ${m}m ${String(s).padStart(2,'0')}s`;
+}
+
+function startAutoRescan() {
+  if (autoRescanTimer) return;
+  autoRescanSeconds = RESCAN_INTERVAL;
+  updateCountdown();
+  autoRescanTimer = setInterval(async () => {
+    autoRescanSeconds--;
+    updateCountdown();
+    if (autoRescanSeconds <= 0) {
+      autoRescanSeconds = RESCAN_INTERVAL;
+      if (!scanRunning) {
+        prevSnapshot = snapshotReport();
+        await startScan();
+        const changes = detectChanges(prevSnapshot, snapshotReport());
+        showChangeAlert(changes);
+      }
+    }
+  }, 1000);
+}
+
+function stopAutoRescan() {
+  if (autoRescanTimer) { clearInterval(autoRescanTimer); autoRescanTimer = null; }
+  updateCountdown();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER FUNCTIONS
+═══════════════════════════════════════════════════════════ */
+
+function renderOverview() {
+  // Metric cards
+  const statusEl  = document.getElementById('mv-status');
+  const rtEl      = document.getElementById('mv-rt');
+  const sslEl     = document.getElementById('mv-ssl');
+  const scoreEl   = document.getElementById('mv-score');
+
+  if (report.siteStatus !== null) {
+    if (report.siteStatus) {
+      statusEl.innerHTML = `<span style="color:var(--green);">ONLINE</span>`;
+    } else {
+      statusEl.innerHTML = `<span style="color:var(--r1);">OFFLINE</span>`;
+    }
+  }
+
+  if (report.responseTime !== null) {
+    const color = report.responseTime < 300 ? 'var(--green)' : report.responseTime < 800 ? 'var(--amber)' : 'var(--r1)';
+    rtEl.innerHTML = `<span style="color:${color};">${report.responseTime}</span>`;
+  }
+
+  if (report.ssl) {
+    const grade = report.ssl.endpoints?.[0]?.grade || report.ssl.status;
+    const gc = gradeColor(grade);
+    sslEl.innerHTML = `<span style="color:${gc};">${escHtml(grade || '—')}</span>`;
+  }
+
+  if (report.headerScore !== null) {
+    const color = report.headerScore >= 80 ? 'var(--green)' : report.headerScore >= 50 ? 'var(--amber)' : 'var(--r1)';
+    scoreEl.innerHTML = `<span style="color:${color};">${report.headerScore}%</span>`;
+  }
+
+  // Server info
+  const si = document.getElementById('server-info');
+  if (report.dns.A || report.ipGeo || report.headers) {
+    const ip    = report.serverIP;
+    const geo   = report.ipGeo;
+    const server = report.headers?.['server'] || 'Not disclosed';
+    const cdn   = report.headers?.['x-nf-request-id'] ? 'Netlify CDN' : (report.headers?.['cf-ray'] ? 'Cloudflare' : 'Unknown CDN');
+    const https = report.headers?.['strict-transport-security'] ? 'Yes' : 'No';
+
+    // HTTP redirect badge
+    let redirectBadge = '<span class="badge badge-gray">Checking…</span>';
+    if (report.httpRedirect?.checked) {
+      if (report.httpRedirect.redirectsToHttps) {
+        redirectBadge = badge('ok', report.httpRedirect.permanent ? '301 Permanent' : '302 Redirect');
+      } else if (report.httpRedirect.isRedirect) {
+        redirectBadge = badge('warn', `Redirects to ${report.httpRedirect.location?.slice(0,20) || '?'}`);
+      } else {
+        redirectBadge = badge('danger', `No redirect (${report.httpRedirect.statusCode || '?'})`);
+      }
+    } else if (report.httpRedirect?.checked === false) {
+      redirectBadge = badge('warn', 'Could not check');
+    }
+
+    si.innerHTML = `
+      <div class="info-row"><span class="info-key">Server IP</span><span class="info-val">${mono(ip || '—', 'var(--blue)')}</span></div>
+      <div class="info-row"><span class="info-key">Location</span><span class="info-val">${geo ? mono(`${geo.city||''}, ${geo.country_name||geo.country||''}`) : mono('—')}</span></div>
+      <div class="info-row"><span class="info-key">ASN / ISP</span><span class="info-val">${geo?.org ? mono(geo.org.slice(0,32)) : mono('—')}</span></div>
+      <div class="info-row"><span class="info-key">CDN</span><span class="info-val">${mono(cdn)}</span></div>
+      <div class="info-row"><span class="info-key">Server</span><span class="info-val">${mono(server)}</span></div>
+      <div class="info-row"><span class="info-key">HTTPS Enforced</span><span class="info-val">${https === 'Yes' ? badge('ok','Yes') : badge('danger','No')}</span></div>
+      <div class="info-row"><span class="info-key">HTTP→HTTPS Redirect</span><span class="info-val">${redirectBadge}</span></div>
+    `;
+  }
+
+  // Headers summary
+  const hs = document.getElementById('headers-summary');
+  if (report.headers) {
+    const score = report.headerScore;
+    const color = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--r1)';
+    const bars = SECURITY_HEADERS.slice(0, 5).map(h => {
+      const v = report.headers[h.key];
+      const g = h.grade(v);
+      const bc = g==='A+'||g==='A' ? 'var(--green)' : g==='B' ? 'var(--amber)' : g==='C' ? '#FF6B35' : 'var(--r1)';
+      const pct = g==='A+'||g==='A' ? 100 : g==='B' ? 70 : g==='C' ? 40 : 5;
+      return `
+        <div class="score-header-grid">
+          <span class="score-h-name">${h.label}</span>
+          <span class="badge badge-${g==='A+'||g==='A'?'ok':g==='B'?'warn':'danger'}">${g}</span>
+        </div>
+      `;
+    }).join('');
+    hs.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:var(--fs-xs);color:var(--t3);">Overall Header Score</span>
+        <span style="font-family:var(--ff-mono);font-size:var(--fs-md);font-weight:700;color:${color};">${score}%</span>
+      </div>
+      <div class="prog" style="margin-bottom:14px;height:6px;">
+        <div class="prog-fill" style="width:${score}%;background:${color};"></div>
+      </div>
+      ${bars}
+    `;
+  } else if (report.headers === null && report.scannedAt) {
+    hs.innerHTML = `<div class="error-box">Failed to fetch headers (API rate limit or network error). Try again shortly.</div>`;
+  }
+
+  // URLscan results
+  const ur = document.getElementById('urlscan-results');
+  if (report.urlscans !== null) {
+    if (report.urlscans.length === 0) {
+      ur.innerHTML = `<div style="padding:12px;font-size:var(--fs-xs);color:var(--t3);text-align:center;">No scans found in URLscan.io database for this domain.</div>`;
+    } else {
+      ur.innerHTML = report.urlscans.slice(0, 4).map(r => {
+        const date  = new Date(r.task?.time || r.indexedAt).toLocaleDateString();
+        const score = r.verdicts?.overall?.score ?? '—';
+        const malicious = r.verdicts?.overall?.malicious;
+        const country = r.page?.country || '—';
+        const ip = r.page?.ip || '—';
+        const sc = malicious ? 'danger' : score > 30 ? 'warn' : 'ok';
+        const verdict = malicious ? 'Malicious' : score > 30 ? 'Suspicious' : 'Clean';
+        return `
+          <div class="scan-result">
+            <div class="scan-url">${escHtml(r.task?.url || TARGET)}</div>
+            <div class="scan-meta">
+              ${badge(sc, verdict)}
+              <span style="font-family:var(--ff-mono);font-size:10px;color:var(--t3);">${date}</span>
+              <span style="font-family:var(--ff-mono);font-size:10px;color:var(--t3);">IP: ${escHtml(ip)}</span>
+              <span style="font-family:var(--ff-mono);font-size:10px;color:var(--t3);">${country}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } else if (report.scannedAt) {
+    ur.innerHTML = `<div class="error-box">URLscan.io unavailable. Try again.</div>`;
+  }
+
+  // Email security
+  renderEmailSecurity();
+}
+
+/* ── RENDER EMAIL SECURITY ── */
+function renderEmailSecurity() {
+  const el = document.getElementById('email-sec-card');
+  if (!el) return;
+  const es = report.emailSecurity;
+  if (!es && !report.scannedAt) return;
+  if (!es) {
+    el.innerHTML = `<div class="card-body"><div class="error-box">Email security data unavailable.</div></div>`;
+    return;
+  }
+
+  const gradeBadge = (g) => g==='A'||g==='A+'?'ok':g==='B'?'warn':g==='C'?'warn':g==='?'?'gray':'danger';
+  const rows = [
+    { proto:'SPF',   data:es.spf   },
+    { proto:'DMARC', data:es.dmarc },
+    { proto:'DKIM',  data:es.dkim  },
+  ].map(r => `
+    <div class="email-row">
+      <span class="email-proto">${r.proto}</span>
+      <div>
+        ${r.data.raw
+          ? `<div class="email-detail">${escHtml(r.data.raw.slice(0,80))}${r.data.raw.length>80?'…':''}</div>`
+          : '<div class="email-detail" style="color:var(--r1);">— not found —</div>'}
+        <div class="email-tip">${escHtml(r.data.note)}</div>
+      </div>
+      <span class="badge badge-${gradeBadge(r.data.grade)}">${escHtml(r.data.grade)}</span>
+    </div>
+  `).join('');
+  el.innerHTML = `<div class="card-body" style="padding:0 14px;">${rows}</div>`;
+}
+
+function renderHeaders() {
+  document.getElementById('headers-live').style.display = report.headers ? 'flex' : 'none';
+
+  // Score card
+  const sc = document.getElementById('header-scores-card');
+  if (report.headers) {
+    const rows = SECURITY_HEADERS.map(h => {
+      const v = report.headers[h.key];
+      const g = h.grade(v);
+      const bc = g==='A+'||g==='A' ? 'ok' : g==='B' ? 'warn' : g==='C' ? 'warn' : 'danger';
+      const displayVal = v ? (v.length > 60 ? v.slice(0, 58) + '…' : v) : '— missing —';
+      return `
+        <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t2);font-weight:500;">${escHtml(h.label)}</span>
+            <span class="badge badge-${bc}">${g}</span>
+          </div>
+          <div style="font-family:var(--ff-mono);font-size:10px;color:${v?'var(--blue)':'#FF6961'};margin-bottom:3px;">${escHtml(displayVal)}</div>
+          <div style="font-size:10px;color:var(--t3);">${escHtml(h.tip)}</div>
+        </div>
+      `;
+    }).join('');
+    sc.innerHTML = `<div class="card-body">${rows}</div>`;
+  } else if (report.scannedAt) {
+    sc.innerHTML = `<div class="card-body"><div class="error-box">Header data unavailable.</div></div>`;
+  }
+
+  // Raw headers
+  const rh = document.getElementById('raw-headers-card');
+  if (report.headers) {
+    const rows = Object.entries(report.headers)
+      .filter(([k]) => !k.startsWith('_'))
+      .sort(([a],[b]) => a.localeCompare(b))
+      .map(([k, v]) => `
+        <div class="hrow">
+          <span class="hrow-name">${escHtml(k)}</span>
+          <span class="hrow-val" title="${escHtml(v)}">${escHtml(v)}</span>
+        </div>
+      `).join('');
+    rh.innerHTML = `<div class="card-body" style="padding:0 14px;">${rows || '<div style="padding:12px;color:var(--t3);font-size:var(--fs-xs);">No headers received.</div>'}</div>`;
+  } else if (report.scannedAt) {
+    rh.innerHTML = `<div class="card-body"><div class="error-box">Could not retrieve headers.</div></div>`;
+  }
+}
+
+function renderSSL() {
+  const el = document.getElementById('ssl-content');
+  if (!report.ssl && !report.scannedAt) return;
+
+  if (!report.ssl) {
+    el.innerHTML = `<div class="error-box">SSL Labs API unavailable. This API can take 1-2 minutes for new scans. Try refreshing.</div>`;
+    return;
+  }
+
+  const d = report.ssl;
+  const status = d.status;
+
+  if (status === 'IN_PROGRESS' || status === 'DNS') {
+    el.innerHTML = `
+      <div class="card"><div class="card-body" style="text-align:center;padding:24px;">
+        <div style="font-size:var(--fs-sm);color:var(--t2);margin-bottom:8px;">SSL Labs scan in progress…</div>
+        <div style="font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t3);">This can take 1-2 minutes. Will auto-refresh.</div>
+      </div></div>`;
+    // Poll
+    setTimeout(async () => {
+      const updated = await pollSSL();
+      if (updated) { report.ssl = updated; renderSSL(); }
+    }, 12000);
+    return;
+  }
+
+  if (status === 'ERROR') {
+    el.innerHTML = `<div class="error-box">SSL Labs error: ${escHtml(d.statusMessage || 'Unknown error')}</div>`;
+    return;
+  }
+
+  // Unexpected status - treat as not ready yet
+  if (status && status !== 'READY') {
+    el.innerHTML = `<div class="card"><div class="card-body" style="text-align:center;padding:24px;">
+      <div style="font-size:var(--fs-sm);color:var(--t2);margin-bottom:8px;">SSL Labs: ${escHtml(status)}</div>
+      <div style="font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--t3);">${escHtml(d.statusMessage || 'Please wait…')}</div>
+    </div></div>`;
+    return;
+  }
+
+  // READY
+  const ep = d.endpoints?.[0];
+  if (!ep) {
+    el.innerHTML = `<div class="error-box">No SSL endpoint data returned.</div>`;
+    return;
+  }
+
+  const grade = ep.grade || '?';
+  const details = ep.details || {};
+  const cert = details.cert || d.certs?.[0] || {};
+  const protocols = details.protocols || [];
+  const suites = details.suites?.[0]?.list?.slice(0,5) || [];
+
+  const notBefore = cert.notBefore ? new Date(cert.notBefore * 1000).toLocaleDateString() : '—';
+  const notAfter  = cert.notAfter  ? new Date(cert.notAfter  * 1000).toLocaleDateString() : '—';
+  const daysLeft  = cert.notAfter  ? Math.round((cert.notAfter * 1000 - Date.now()) / 86400000) : null;
+  const certStatus = daysLeft !== null ? (daysLeft < 30 ? 'danger' : daysLeft < 90 ? 'warn' : 'ok') : 'gray';
+
+  const hsts  = ep.details?.hsts ? badge('ok','HSTS Active') : badge('danger','No HSTS');
+  const pfs   = ep.details?.forwardSecrecy >= 2 ? badge('ok','PFS Enabled') : badge('warn','PFS Partial');
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:8px;">
+      <div class="card-head"><span class="card-title">SSL Grade</span></div>
+      <div class="card-body" style="display:flex;align-items:center;gap:20px;">
+        <div class="grade-circle ${gradeClass(grade)}">
+          <span class="grade-val">${escHtml(grade)}</span>
+          <span class="grade-sub">SSL</span>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:var(--fs-xs);color:var(--t3);margin-bottom:6px;">${escHtml(ep.statusMessage||'')}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">${hsts}${pfs}</div>
+          ${ep.hasWarnings ? `<div style="margin-top:6px;">${badge('warn','Has Warnings')}</div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:8px;">
+      <div class="card-head"><span class="card-title">Certificate</span></div>
+      <div class="card-body">
+        <div class="cert-row"><span class="cert-key">Subject</span><span class="cert-val">${escHtml(cert.subject||d.host||DOMAIN)}</span></div>
+        <div class="cert-row"><span class="cert-key">Issuer</span><span class="cert-val">${escHtml(cert.issuerLabel||cert.issuerSubject||'—')}</span></div>
+        <div class="cert-row"><span class="cert-key">Valid From</span><span class="cert-val">${notBefore}</span></div>
+        <div class="cert-row"><span class="cert-key">Expires</span><span class="cert-val">${notAfter} ${daysLeft !== null ? badge(certStatus, `${daysLeft}d left`) : ''}</span></div>
+        <div class="cert-row"><span class="cert-key">Key Type</span><span class="cert-val">${escHtml(cert.keyAlg||'—')} ${cert.keySize ? cert.keySize+'bit' : ''}</span></div>
+        <div class="cert-row"><span class="cert-key">Signature</span><span class="cert-val">${escHtml(cert.sigAlg||'—')}</span></div>
+        ${cert.ocspRevocationStatus !== undefined ? `<div class="cert-row"><span class="cert-key">OCSP</span><span class="cert-val">${cert.ocspRevocationStatus === 0 ? badge('ok','Not Revoked') : badge('danger','Revoked')}</span></div>` : ''}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:8px;">
+      <div class="card-head"><span class="card-title">Protocol Support</span></div>
+      <div class="card-body">
+        ${protocols.length ? protocols.map(p => {
+          const ok = p.name === 'TLS' && p.version >= '1.2';
+          const danger = p.name === 'SSL' || (p.name === 'TLS' && p.version < '1.2');
+          return `<div class="cert-row">
+            <span class="cert-key">${escHtml(p.name)} ${escHtml(String(p.version))}</span>
+            <span class="cert-val">${badge(danger?'danger':ok?'ok':'warn', danger?'Insecure':'Supported')}</span>
+          </div>`;
+        }).join('') : '<div style="font-size:var(--fs-xs);color:var(--t3);">Protocol data unavailable</div>'}
+      </div>
+    </div>
+
+    ${suites.length ? `
+    <div class="card">
+      <div class="card-head"><span class="card-title">Top Cipher Suites</span></div>
+      <div class="card-body">
+        ${suites.map(s => `
+          <div class="cert-row">
+            <span class="cert-key" style="font-size:10px;">${escHtml((s.name||'').slice(0,28))}</span>
+            <span class="cert-val">${s.q === 0 ? badge('danger','Weak') : badge('ok','OK')}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function renderDNS() {
+  const el = document.getElementById('dns-content');
+  const d  = report.dns;
+  if (!d.A && !report.scannedAt) return;
+
+  const blocks = [];
+
+  // A Records
+  if (d.A?.Answer) {
+    const rows = d.A.Answer.filter(r => r.type === 1).map(r =>
+      `<div class="dns-row">
+        <span class="dns-type">A</span>
+        <div><div class="dns-val">${escHtml(r.data)}</div><div class="dns-ttl">TTL ${r.TTL}s</div></div>
+      </div>`
+    ).join('');
+    if (rows) blocks.push(`<div class="card"><div class="card-head"><span class="card-title">IPv4 Records (A)</span></div><div class="card-body" style="padding:0 14px;">${rows}</div></div>`);
+  }
+
+  // AAAA Records
+  if (d.AAAA?.Answer) {
+    const rows = d.AAAA.Answer.filter(r => r.type === 28).map(r =>
+      `<div class="dns-row">
+        <span class="dns-type">AAAA</span>
+        <div><div class="dns-val">${escHtml(r.data)}</div><div class="dns-ttl">TTL ${r.TTL}s</div></div>
+      </div>`
+    ).join('');
+    if (rows) blocks.push(`<div class="card"><div class="card-head"><span class="card-title">IPv6 Records (AAAA)</span></div><div class="card-body" style="padding:0 14px;">${rows}</div></div>`);
+  }
+
+  // MX Records
+  if (d.MX?.Answer) {
+    const rows = d.MX.Answer.filter(r => r.type === 15).map(r =>
+      `<div class="dns-row">
+        <span class="dns-type">MX</span>
+        <div><div class="dns-val">${escHtml(r.data)}</div><div class="dns-ttl">TTL ${r.TTL}s</div></div>
+      </div>`
+    ).join('');
+    if (rows) blocks.push(`<div class="card"><div class="card-head"><span class="card-title">Mail Records (MX)</span></div><div class="card-body" style="padding:0 14px;">${rows}</div></div>`);
+    else blocks.push(`<div class="card"><div class="card-body"><div style="font-size:var(--fs-xs);color:var(--t3);">No MX records — domain has no mail server.</div></div></div>`);
+  }
+
+  // NS Records
+  if (d.NS?.Answer) {
+    const rows = d.NS.Answer.filter(r => r.type === 2).map(r =>
+      `<div class="dns-row">
+        <span class="dns-type">NS</span>
+        <div><div class="dns-val">${escHtml(r.data)}</div><div class="dns-ttl">TTL ${r.TTL}s</div></div>
+      </div>`
+    ).join('');
+    if (rows) blocks.push(`<div class="card"><div class="card-head"><span class="card-title">Nameservers (NS)</span></div><div class="card-body" style="padding:0 14px;">${rows}</div></div>`);
+  }
+
+  // TXT Records
+  if (d.TXT?.Answer) {
+    const rows = d.TXT.Answer.filter(r => r.type === 16).map(r => {
+      const val = r.data.replace(/^"|"$/g,'');
+      const isSPF  = val.startsWith('v=spf1');
+      const isDMARC = val.startsWith('v=DMARC1');
+      const isDKIM = val.startsWith('v=DKIM1');
+      const tag = isSPF ? badge('info','SPF') : isDMARC ? badge('info','DMARC') : isDKIM ? badge('info','DKIM') : '';
+      return `<div class="dns-row">
+        <span class="dns-type">TXT</span>
+        <div>
+          ${tag ? `<div style="margin-bottom:4px;">${tag}</div>` : ''}
+          <div class="dns-val" style="word-break:break-all;">${escHtml(val)}</div>
+          <div class="dns-ttl">TTL ${r.TTL}s</div>
+        </div>
+      </div>`;
+    }).join('');
+    if (rows) blocks.push(`<div class="card"><div class="card-head"><span class="card-title">Text Records (TXT)</span></div><div class="card-body" style="padding:0 14px;">${rows}</div></div>`);
+  }
+
+  el.innerHTML = blocks.join('') || `<div class="error-box">DNS lookup failed.</div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL STATUS INDICATOR
+═══════════════════════════════════════════════════════════ */
+function updateGlobalStatus() {
+  const pill = document.getElementById('global-status');
+  const txt  = document.getElementById('status-text');
+
+  if (!report.scannedAt) {
+    pill.className = 'status-pill loading';
+    txt.textContent = 'Scanning…';
+    return;
+  }
+
+  const score = report.headerScore ?? 0;
+  const sslGrade = report.ssl?.endpoints?.[0]?.grade || '';
+  const online = report.siteStatus;
+
+  if (!online) {
+    pill.className = 'status-pill danger';
+    txt.textContent = 'OFFLINE';
+    return;
+  }
+
+  const sslOk = sslGrade.startsWith('A');
+  if (score >= 80 && sslOk) {
+    pill.className = 'status-pill secure';
+    txt.textContent = 'SECURE';
+  } else if (score >= 50 || sslOk) {
+    pill.className = 'status-pill warning';
+    txt.textContent = 'REVIEW';
+  } else {
+    pill.className = 'status-pill danger';
+    txt.textContent = 'AT RISK';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN SCAN ORCHESTRATOR
+═══════════════════════════════════════════════════════════ */
+let scanRunning = false;
+
+async function startScan() {
+  if (scanRunning) return;
+  scanRunning = true;
+
+  const btn  = document.getElementById('scan-btn');
+  const icon = document.getElementById('scan-icon');
+  btn.classList.add('scanning');
+  btn.disabled = true;
+  icon.classList.add('spin');
+
+  try {
+    // Reset
+    report = {
+      scannedAt: null, siteStatus: null, responseTime: null,
+      headers: null, headerScore: null, ssl: null,
+      dns: {}, serverIP: null, ipGeo: null, urlscans: null,
+      httpRedirect: null, emailSecurity: null,
+    };
+
+    updateGlobalStatus();
+
+    // ── PHASE 1: Fast parallel checks ──
+    const [statusResult, headersResult, sslResult, urlscanResult,
+           dnsA, dnsAAAA, dnsMX, dnsNS, dnsTXT, redirectResult] = await Promise.allSettled([
+      checkSiteStatus(),
+      fetchHeaders(),
+      fetchSSL(),
+      fetchURLScan(),
+      fetchDNS('A'),
+      fetchDNS('AAAA'),
+      fetchDNS('MX'),
+      fetchDNS('NS'),
+      fetchDNS('TXT'),
+      checkHttpRedirect(),
+    ]);
+
+    // Store results
+    if (statusResult.status === 'fulfilled') {
+      report.siteStatus   = statusResult.value.online;
+      report.responseTime = statusResult.value.ms;
+    }
+    if (headersResult.status === 'fulfilled') {
+      report.headers = headersResult.value;
+    }
+    if (sslResult.status === 'fulfilled' && sslResult.value) {
+      report.ssl = sslResult.value;
+    }
+    if (urlscanResult.status === 'fulfilled') {
+      report.urlscans = urlscanResult.value;
+    }
+    if (dnsA.status === 'fulfilled' && dnsA.value) {
+      report.dns.A = dnsA.value;
+      const aRec = dnsA.value.Answer?.find(r => r.type === 1);
+      if (aRec) report.serverIP = aRec.data;
+    }
+    if (dnsAAAA.status === 'fulfilled') report.dns.AAAA = dnsAAAA.value;
+    if (dnsMX.status   === 'fulfilled') report.dns.MX   = dnsMX.value;
+    if (dnsNS.status   === 'fulfilled') report.dns.NS   = dnsNS.value;
+    if (dnsTXT.status  === 'fulfilled') report.dns.TXT  = dnsTXT.value;
+    if (redirectResult.status === 'fulfilled') report.httpRedirect = redirectResult.value;
+
+    // Calculate header score
+    if (report.headers) {
+      report.headerScore = calcHeaderScore(report.headers);
+    }
+
+    report.scannedAt = new Date();
+    const lastScanEl = document.getElementById('last-scan-time');
+    if (lastScanEl) lastScanEl.textContent = report.scannedAt.toLocaleString();
+
+    // ── PHASE 2: IP Geolocation + Email Security (depends on DNS) ──
+    const [geoResult, emailResult] = await Promise.allSettled([
+      fetchIPGeo(report.serverIP),
+      analyzeEmailSecurity(),
+    ]);
+    if (geoResult.status   === 'fulfilled') report.ipGeo         = geoResult.value;
+    if (emailResult.status === 'fulfilled') report.emailSecurity = emailResult.value;
+
+    // ── Render all pages ──
+    renderOverview();
+    renderHeaders();
+    renderSSL();
+    renderDNS();
+    updateGlobalStatus();
+
+  } catch (err) {
+    console.error('Scan error:', err);
+    // Show error in overview
+    const si = document.getElementById('server-info');
+    if (si) si.innerHTML = `<div class="error-box">Scan error: ${escHtml(String(err.message || err))}</div>`;
+  } finally {
+    // Always restore button regardless of success or failure
+    scanRunning = false;
+    btn.classList.remove('scanning');
+    btn.disabled = false;
+    icon.classList.remove('spin');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT REPORT
+═══════════════════════════════════════════════════════════ */
+function exportReport() {
+  const data = {
+    generatedAt: new Date().toISOString(),
+    domain: DOMAIN,
+    siteOnline: report.siteStatus,
+    responseTimeMs: report.responseTime,
+    headerSecurityScore: report.headerScore,
+    sslGrade: report.ssl?.endpoints?.[0]?.grade || null,
+    serverIP: report.serverIP,
+    geoLocation: report.ipGeo ? `${report.ipGeo.city}, ${report.ipGeo.country_name}` : null,
+    isp: report.ipGeo?.org || null,
+    headers: report.headers,
+    securityHeaderAnalysis: SECURITY_HEADERS.map(h => ({
+      header: h.label,
+      present: !!report.headers?.[h.key],
+      value: report.headers?.[h.key] || null,
+      grade: report.headers ? h.grade(report.headers[h.key]) : '—',
+      recommendation: h.tip,
+    })),
+    dnsRecords: {
+      A:    report.dns.A?.Answer?.filter(r=>r.type===1).map(r=>r.data) || [],
+      AAAA: report.dns.AAAA?.Answer?.filter(r=>r.type===28).map(r=>r.data) || [],
+      MX:   report.dns.MX?.Answer?.filter(r=>r.type===15).map(r=>r.data) || [],
+      NS:   report.dns.NS?.Answer?.filter(r=>r.type===2).map(r=>r.data) || [],
+      TXT:  report.dns.TXT?.Answer?.filter(r=>r.type===16).map(r=>r.data.replace(/^"|"$/g,'')) || [],
+    },
+    urlscanResults: report.urlscans?.slice(0,5).map(r => ({
+      url: r.task?.url,
+      scanned: r.task?.time,
+      verdict: r.verdicts?.overall?.malicious ? 'Malicious' : 'Clean',
+      score: r.verdicts?.overall?.score,
+    })) || [],
+    httpRedirect: report.httpRedirect || null,
+    emailSecurity: report.emailSecurity || null,
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `security-report-${DOMAIN}-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE TOGGLE
+═══════════════════════════════════════════════════════════ */
+document.getElementById('dark-toggle').addEventListener('change', e => {
+  document.body.style.filter = e.target.checked ? '' : 'invert(0.93) hue-rotate(180deg)';
+});
+
+document.getElementById('autorescan-toggle').addEventListener('change', e => {
+  if (e.target.checked) {
+    startAutoRescan();
+  } else {
+    stopAutoRescan();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   PWA MANIFEST + SERVICE WORKER
+═══════════════════════════════════════════════════════════ */
+(function() {
+  const m = { name:'Security Scanner', short_name:'SecScan', start_url:'.', display:'standalone',
+    background_color:'#060608', theme_color:'#060608',
+    icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="%23FF3B30"/><text y="125" x="96" text-anchor="middle" font-size="100" fill="white">🔒</text></svg>',sizes:'192x192',type:'image/svg+xml'}]
+  };
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(new Blob([JSON.stringify(m)], {type:'application/json'}));
+  document.head.appendChild(link);
+})();
+
+if ('serviceWorker' in navigator) {
+  const sw = `self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response('Offline'))));`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw], {type:'application/javascript'}))).catch(()=>{});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT — auto-start scan on load
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  startScan();
+});
+</script>
+</body>
+</html>
